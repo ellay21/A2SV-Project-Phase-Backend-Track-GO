@@ -14,7 +14,6 @@ type LibraryManager interface {
 	ListBorrowedBooks(memberID int) ([]models.Book, error)
 }
 
-// Library implements the LibraryManager interface.
 type Library struct {
 	Books   map[int]models.Book
 	Members map[int]models.Member
@@ -22,7 +21,6 @@ type Library struct {
 	nextMemberID int
 }
 
-// NewLibrary creates and returns a new Library instance.
 func NewLibrary() *Library {
 	return &Library{
 		Books:   make(map[int]models.Book),
@@ -32,7 +30,6 @@ func NewLibrary() *Library {
 	}
 }
 
-// AddBook adds a new book to the library.
 func (l *Library) AddBook(book models.Book) {
 	book.ID = l.nextBookID
 	book.Status = "Available"

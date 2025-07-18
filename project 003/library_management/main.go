@@ -6,20 +6,20 @@ import (
 	"library_management/services"
 	"os"
 	"strconv"
+	"library_management/models"
 )
 
 func main() {
 	libraryService := services.NewLibrary()
 	controller := controllers.NewLibraryController(libraryService)
-
-	// Add some initial data for testing
+	// custom data for testiung purposes
 	libraryService.AddBook(models.Book{Title: "The Great Gatsby", Author: "F. Scott Fitzgerald"})
 	libraryService.AddBook(models.Book{Title: "1984", Author: "George Orwell"})
 	libraryService.AddBook(models.Book{Title: "To Kill a Mockingbird", Author: "Harper Lee"})
 
 	member1 := libraryService.AddMember("Alice Smith")
 	member2 := libraryService.AddMember("Bob Johnson")
-
+	fmt.Println("Welcome to the Library Management System!")
 	fmt.Printf("Initial Library Data: Book IDs %v, Member IDs %v\n", libraryService.Books, libraryService.Members)
 	fmt.Printf("Member 1 (ID: %d) Name: %s\n", member1.ID, member1.Name)
 	fmt.Printf("Member 2 (ID: %d) Name: %s\n", member2.ID, member2.Name)
