@@ -4,7 +4,7 @@
 
 This document describes the available endpoints for the Task Manager API. Use these endpoints to manage tasks (create, read, update, delete).
 
-> **Note:** The `status` field is of the following values: `In_Progress`, `Completed`, or `Pending`.
+> **Note:** The `status` field is of the following values: `in progress`, `completed`, or `pending`.
 
 ## Endpoints
 
@@ -22,7 +22,7 @@ This document describes the available endpoints for the Task Manager API. Use th
     "title": "Task 1",
     "description": "First task",
     "due_date": "2025-07-16T12:00:00Z",
-    "status": "In_Progress"
+    "status": "in progress"
   },
   ...
 ]
@@ -41,7 +41,7 @@ This document describes the available endpoints for the Task Manager API. Use th
   "title": "Task 1",
   "description": "First task",
   "due_date": "2025-07-16T12:00:00Z",
-  "status": "In_Progress"
+  "status": "in progress"
 }
 ```
 
@@ -75,7 +75,7 @@ This document describes the available endpoints for the Task Manager API. Use th
   "title": "Updated Task",
   "description": "Updated description",
   "due_date": "2025-07-21T12:00:00Z",
-  "status": "Completed"
+  "status": "completed"
 }
 ```
 
