@@ -1,9 +1,10 @@
 package router
 
 import (
-	"github.com/gin-gonic/gin"
 	"task_manager/controllers"
 	"task_manager/middleware"
+
+	"github.com/gin-gonic/gin"
 )
 
 func SetupRouter(taskController *controllers.TaskController, userController *controllers.UserController) *gin.Engine {
@@ -14,13 +15,14 @@ func SetupRouter(taskController *controllers.TaskController, userController *con
 	{
 		adminRoutes.GET("/users", userController.GetAllUsers)
 		adminRoutes.GET("/users/:id", userController.GetUser)
+		adminRoutes.GET("/tasks", taskController.GetAllUserTasks)
 		adminRoutes.DELETE("/users/:id", userController.DeleteUser)
 	}
 
 	userRoutes := router.Group("/auth")
 	{
-		userRoutes.POST("/users",userController.CreateUser)
-		userRoutes.POST("/login",userController.Login)
+		userRoutes.POST("/register", userController.CreateUser)
+		userRoutes.POST("/login", userController.Login)
 	}
 	taskRoutes := router.Group("/tasks")
 	taskRoutes.Use(authMiddleware.Authenticate(), authMiddleware.Authorize("admin", "user"))

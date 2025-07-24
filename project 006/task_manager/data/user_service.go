@@ -1,20 +1,24 @@
 package data
+
 import (
 	"context"
 	"errors"
 	"task_manager/models"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
-
+	"go.mongodb.org/mongo-driver/mongo"
 )
+
 type UserService struct {
-	connect Database
+	connect *Database
 }
-func NewUserService(connection Database) (*UserService, error) {
+
+func NewUserService(connection *Database) *UserService {
 	return &UserService{
 		connect: connection,
-	}, nil
+	}
 }
 func (s *UserService) CUser(u models.User, ctx context.Context) (*models.User, error) {
 	u.ID = primitive.NewObjectID()
@@ -28,15 +32,22 @@ func (s *UserService) CUser(u models.User, ctx context.Context) (*models.User, e
 	}
 	return &u, nil
 }
-func (s *UserService) LoginUser(u models.User, ctx context.Context) error {
-	var user models.User
-	if err := s.connect.Collections.Users.FindOne(ctx, bson.M{"username": u.Username}).Decode(&user); err != nil {
-		return err
-	}
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(u.Password)); err != nil {
-		return err
-	}
-	return nil
+func (s *UserService) AuthenticateUser(username, password string) (*models.User, error) {
+    var user models.User
+    err := s.connect.Collections.Users.FindOne(context.Background(), bson.M{"username": username}).Decode(&user)
+    if err != nil {
+        if err == mongo.ErrNoDocuments {
+            return nil, errors.New("user not found")
+        }
+        return nil, err
+    }
+
+    // Compare the provided password with the hashed password
+    if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+        return nil, errors.New("invalid password")
+    }
+
+    return &user, nil
 }
 func (s *UserService) GUser(id string, ctx context.Context) (*models.User, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)

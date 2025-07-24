@@ -39,22 +39,38 @@ func (c *UserController) CreateUser(ctx *gin.Context) {
 	ctx.IndentedJSON(201, gin.H{"message": "User created successfully", "user": newUser, "token": token})
 }
 func (c *UserController) Login(ctx *gin.Context) {
-	var user models.User
-	if err := ctx.ShouldBind(&user); err != nil {
-		ctx.IndentedJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	if err := c.UserService.LoginUser(user, ctx); err != nil {
-		ctx.IndentedJSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
-		return
-	}
-	auth_middleware := middleware.NewAuthMiddleware()
-	token, err := auth_middleware.GenerateJWT(user.Username, user.Role)
-	if err != nil {
-		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-		return
-	}
-	ctx.IndentedJSON(http.StatusOK, gin.H{"message": "Login successful", "token": token})
+    var loginRequest struct {
+        Username string `json:"username" binding:"required"`
+        Password string `json:"password" binding:"required"`
+    }
+
+    if err := ctx.ShouldBindJSON(&loginRequest); err != nil {
+        ctx.IndentedJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    // Get the actual user from database
+    authenticatedUser, err := c.UserService.AuthenticateUser(loginRequest.Username, loginRequest.Password)
+    if err != nil {
+        ctx.IndentedJSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+        return
+    }
+
+    auth_middleware := middleware.NewAuthMiddleware()
+    token, err := auth_middleware.GenerateJWT(authenticatedUser.Username, authenticatedUser.Role)
+    if err != nil {
+        ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+        return
+    }
+
+    ctx.IndentedJSON(http.StatusOK, gin.H{
+        "message": "Login successful",
+        "token":   token,
+        "user": gin.H{
+            "username": authenticatedUser.Username,
+            "role":    authenticatedUser.Role,
+        },
+    })
 }
 func (c *UserController) GetUser(ctx *gin.Context) {
 	id := ctx.Param("id")

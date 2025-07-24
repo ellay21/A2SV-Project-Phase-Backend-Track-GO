@@ -8,16 +8,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type TaskService struct {
-	connect Database
+	connect *Database
 }
 
-func NewTaskService(connection Database) (*TaskService, error) {
+func NewTaskService(connection *Database) *TaskService {
 	return &TaskService{
 		connect: connection,
-	}, nil
+	}
 }
 
 func (s *TaskService) CTask(t models.Task, ctx *gin.Context) (*models.Task, error) {
@@ -74,6 +75,41 @@ func (s *TaskService) GAllTasks(ctx context.Context) []models.Task {
 	}
 	return tasks
 }
+func (s *TaskService) GUAllTasks(ctx *gin.Context) ([]models.Task, error) {
+	username, exists := ctx.Get("username")
+	if !exists {
+		return nil, errors.New("username not found in context")
+	}
+
+	// First, find the user to get their task IDs
+	var user models.User
+	userFilter := bson.M{"username": username}
+	err := s.connect.Collections.Users.FindOne(ctx, userFilter).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.New("user not found")
+		}
+		return nil, err
+	}
+	if len(user.TaskIDs) == 0 {
+		return []models.Task{}, nil
+	}
+
+	// Find all tasks where ID is in the user's TaskIDs array
+	taskFilter := bson.M{"_id": bson.M{"$in": user.TaskIDs}}
+	cursor, err := s.connect.Collections.Tasks.Find(ctx, taskFilter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var tasks []models.Task
+	if err := cursor.All(ctx, &tasks); err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
 
 func (s *TaskService) UTask(t models.Task, id string, ctx context.Context) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
@@ -117,20 +153,20 @@ func (s *TaskService) DTask(id string, ctx *gin.Context) error {
 		return errors.New("task not found")
 	}
 	// delete the task id from the user's task_ids array
-    username, exists := ctx.Get("username")
-    if !exists {
-        return errors.New("username not found in context")
-    }
+	username, exists := ctx.Get("username")
+	if !exists {
+		return errors.New("username not found in context")
+	}
 
-    userFilter := bson.M{"username": username}
-    update := bson.M{
-        "$pull": bson.M{"task_ids": objectID}, 
-    }
+	userFilter := bson.M{"username": username}
+	update := bson.M{
+		"$pull": bson.M{"task_ids": objectID},
+	}
 
-    _, err = s.connect.Collections.Users.UpdateOne(ctx, userFilter, update)
-    if err != nil {
-        return err
-    }
+	_, err = s.connect.Collections.Users.UpdateOne(ctx, userFilter, update)
+	if err != nil {
+		return err
+	}
 
-    return nil
+	return nil
 }
